@@ -1,0 +1,44 @@
+---
+- name: Set default variable values
+  set_fact:
+    dropbox_up_to_date: False
+    dropbox_happy_cmd.stdout: "Sad"
+    dropbox_not_running: False
+
+- name: Is dropbox happy and up to date?
+  command: 'su {{ site_admin_user }} -c "dropbox status"'
+  register: dropbox_happy_cmd
+  ignore_errors: yes
+  changed_when: false
+
+- name: Dropbox is up-to-date; set a fact
+  set_fact:
+    dropbox_up_to_date: True
+  when: "'Up to date' in dropbox_happy_cmd.stdout"
+
+- name: Is dropboxd is running?
+  command: sup status dropboxd
+  register: dropboxd_running_cmd
+  changed_when: false
+
+- name: If dropboxd is not running, set a variable
+  set_fact:
+    dropboxd_not_running: True
+  when: "'RUNNING' not in dropboxd_running_cmd.stdout and not dropbox_up_to_date"
+
+# Install Dropboxd if not running
+- include: install_dropboxd.yml
+  when: not dropbox_up_to_date and dropboxd_not_running
+
+# Verify Dropbox is up to date
+- name: Verify dropbox has fully sync'd
+  command: 'su {{ site_admin_user }} -c "dropbox status"'
+  register: result
+  until:
+    - "'Up to date' in result.stdout"
+  delay: 10
+  retries: 100
+  changed_when: false
+
+
+

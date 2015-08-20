@@ -1,0 +1,21 @@
+www_root_dir: "/var/www"
+www_user: "www-data"
+www_group: "www-data"
+
+site_dns_name: pelican.foo
+site_root: "{{ www_root_dir }}/{{ site_dns_name }}"
+site_html: "{{ site_root }}/html"
+site_logs: "{{ site_root }}/logs"
+site_port: 8080
+
+add_pelican_content: true
+pelican_user: "{{ site_admin_user }}"
+pelican_dir: "/home/{{ pelican_user }}/Dropbox/pelican.foo"
+pelican_output_dir: "{{ pelican_dir }}/output"
+pelican_plugin_dir: "{{ pelican_dir }}/plugins"
+
+add_pelican_scripts: true
+schedule_pelican_publish: true
+# Hours and minutes to publish, in cron format, like '0-23, *, */2'
+pelican_publish_cron_hour: "3,9,15"
+pelican_publish_cron_minute: "17"

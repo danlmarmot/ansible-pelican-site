@@ -1,0 +1,7 @@
+---
+nginx_default_port: 8080
+nginx_log_dir: /var/log/nginx
+
+www_root_dir: "/var/www"
+www_user: "www-data"
+www_group: "www-data"

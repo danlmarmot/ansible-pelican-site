@@ -1,0 +1,84 @@
+---
+# Look for the shared_folder variable for Vagrant-based installs
+- name: Look for Vagrant shared folder
+  stat: path=/home/vagrant/shared/installers/
+  register: shared_folder
+
+#######
+#  Determine if we should install
+#######
+
+- name: Default to installing Python3
+  set_fact:
+    python3_install_flag: true
+
+- name: Look for previous Python3 install
+  stat: path=/usr/bin/python3
+  register: python3_prev_install
+
+- name: If previous Python3 install, get version
+  command: python3 --version
+  when: python3_prev_install.stat.exists
+  register: python3_prev_version_cmd
+  changed_when: false
+
+- name: If previous install, set version fact
+  set_fact:
+    python3_prev_version: '{{ python3_prev_version_cmd.stdout | regex_replace("Python\s(\d+\.\d+\.\d+?)", "\\1") }}'
+  when: python3_prev_install.stat.exists and python3_prev_version_cmd is defined
+
+- name: Do not install if previously installed and up-to-date
+  set_fact:
+    python3_install_flag: false
+  when: python3_prev_version_cmd is defined and python3_prev_version == python3_version
+
+#######
+#  Install prereqs for Python 3
+#  - lib-ssl is needed for Python3 SSL support; 'make test' will fail if it's not installed
+#######
+
+- name: Update apt-cache if older than two hours, and apt dist-upgrade (Debian)
+  apt:
+    update_cache: yes
+    cache_valid_time: 7200
+    upgrade: dist
+  when: ansible_os_family == 'Debian' and python3_install_flag == true
+
+- name: Install default packages (Debian)
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - libssl-dev
+  when: ansible_os_family == 'Debian' and python3_install_flag == true
+
+#######
+#  Install if needed
+#######
+
+# For Vagrant environments
+- include: install-python3-from-shared-dir.yml
+  when: shared_folder.stat.exists and python3_install_flag == true and group_name == "vagrant"
+
+# For non-Vagrant environments
+- include: install-python3-from-web.yml
+  when: python3_install_flag == true and group_name != "vagrant"
+
+#######
+#  Verify Python3 is installed
+#######
+
+- name: Verify Python3 install
+  command: python3 --version
+  register: python3_version_cmd
+  changed_when: false
+
+- name: Correct version of Python3 is installed
+  assert:
+    that:
+      - "'Python {{ python3_version }}' in python3_version_cmd.stdout"
+
+#######
+#  Install Pelican
+#######
+
+- include: install_pelican.yml
+  when: install_pelican

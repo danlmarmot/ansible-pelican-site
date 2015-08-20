@@ -1,0 +1,8 @@
+---
+# This is empty; variables defined here get shared with all roles.
+# Roles aren't namespaced in Ansible; if variable names overlap between roles
+# then the last one defined wins, which can be subtle and difficult to troubleshoot
+#
+# For these roles, variables are defined in vars/site.yml and included at the start of top of each role
+#
+# See https://github.com/ansible/ansible/issues/2796 for discussion

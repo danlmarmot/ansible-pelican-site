@@ -1,0 +1,30 @@
+---
+
+- name: Look for Pelican output directory in Dropbox
+  stat: path="{{ pelican_output_dir }}"
+  register: pelican_output_dir_info
+
+# Permissions on Dropbox need to be 0755 for nginx to serve files from a symlinked folder inside
+- name: Set permissions on Dropbox directory
+  file:
+    path: "/home/{{ site_admin_user }}/Dropbox"
+    mode: 0755
+  when: pelican_output_dir_info.stat.exists
+
+- name: "Remove /var/www/{{ site_root }}/html if Pelican output dir is found"
+  file:
+    path: "{{ site_root }}/html"
+    state: absent
+  when: pelican_output_dir_info.stat.exists
+  changed_when: false
+
+- name: "Place Pelican output at {{ site_html }}"
+  file:
+    src: "{{ pelican_output_dir }}"
+    dest: "{{ site_html }}"
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    state: link
+  when: pelican_output_dir_info.stat.exists
+  changed_when: false
+

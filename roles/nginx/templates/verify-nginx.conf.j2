@@ -1,0 +1,12 @@
+server {
+	listen {{ nginx_default_port }} default_server;
+
+	server_name localhost;
+
+    root /var/www/verify-nginx;
+	index index.html index.htm;
+
+	location / {
+        try_files $uri $uri/ =404;
+    }
+}

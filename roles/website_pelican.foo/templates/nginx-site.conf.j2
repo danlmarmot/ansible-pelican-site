@@ -1,0 +1,36 @@
+server {
+    server_name {{ site_dns_name }} www.{{ site_dns_name }};
+    listen {{ site_port }};
+
+    # Strip out 8080 from any nginx internal redirects; for instance if a trailing slash is missing in a URL
+    port_in_redirect off;
+
+    root        /var/www/{{ site_dns_name }}/html;
+    index       index.html index.htm default.htm;
+    error_page  404 /error/404.html;
+
+    location / {
+        try_files "${uri}.html" $uri $uri/ index.html =404;
+    }
+
+    location = /error/404.html {
+        internal;
+    }
+
+    # Redirect server error pages to the static page /50x.html
+ #   error_page 500 502 503 504 /50x.html;
+ #   location = /50x.html {
+ #       root /var/www/default;
+ #   }
+
+    # Logs
+    access_log /var/www/{{ site_dns_name }}/logs/access.log;
+    error_log /var/www/{{ site_dns_name }}/logs/error.log;
+
+    location ~/\.ht {
+        deny all;
+    }
+
+    include conf.d/server_include.txt;
+
+}

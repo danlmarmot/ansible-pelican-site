@@ -1,0 +1,25 @@
+---
+- name: Enable ufw
+  ufw: state=enabled
+
+- name: ufw default deny incoming
+  ufw: policy=deny direction=incoming
+
+- name: ufw default deny incoming
+  ufw: policy=allow direction=outgoing
+
+- name: sudo ufw logging on
+  ufw: logging=on
+
+- name: ufw limit ssh connections
+  ufw: rule=limit port={{ sshd_port }} proto=tcp
+  changed_when: false
+
+- name: open allowed ports
+  ufw: rule=allow port={{ item }} proto=tcp
+  with_items:
+  - 80
+  - 443
+  - "{{ sshd_port }}"
+  changed_when: false
+

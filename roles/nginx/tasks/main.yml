@@ -1,0 +1,92 @@
+---
+- name: add site_admin_user to www-data group
+  user:
+    name: "{{ site_admin_user }}"
+    groups: www-data
+  changed_when: false
+
+# Adding a PPA can take several seconds to a minute.  Speed it up by looking for an entry in sources first.
+# The ansible_distribution_release variable resolves to trusty for Ubuntu 14.04, by the way
+- name: Look for existing nginx ppa repository
+  stat: path="/etc/apt/sources.list.d/ppa_nginx_stable_{{ ansible_distribution_release }}.list"
+  register: nginx_ppa_repo_file
+
+- name: Add nginx ppa repository
+  apt_repository: repo='ppa:nginx/stable'
+  when: nginx_ppa_repo_file.stat.exists == false
+
+- name: install nginx
+  apt: pkg=nginx state=installed
+
+- name: remove default site
+  file: path=/etc/nginx/sites-enabled/default state=absent
+
+- name: add our nginx.conf
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: 644
+
+# These are global settings for all nginx server blocks
+- name: Copy server block include file
+  template:
+    src: nginx-server_include.txt.j2
+    dest: "/etc/nginx/conf.d/server_include.txt"
+#    owner: "{{ www_user }}"
+#    group: "{{ www_group }}"
+    owner: root
+    group: root
+
+- name: Add a directory to verify nginx
+  file:
+    path: "/var/www/verify-nginx"
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0755
+
+- name: Add the verify-nginx index.html page
+  copy:
+    src: verify-nginx-index.html
+    dest: /var/www/verify-nginx/index.html
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0755
+
+- name: Add the verify-nginx config file to sites-available
+  template:
+    src: verify-nginx.conf.j2
+    dest: /etc/nginx/sites-available/verify-nginx.conf
+    owner: root
+    group: root
+    mode: 644
+
+- name: update sites enabled for static site
+  file:
+    src: /etc/nginx/sites-available/verify-nginx.conf
+    dest: /etc/nginx/sites-enabled/verify-nginx.conf
+    state: link
+  changed_when: false
+
+- name: restart nginx
+  service: name=nginx state=restarted
+  changed_when: false
+
+#file: provision/roles/nginx_verify/tasks/main.yml
+- name: verify nginx
+  shell: curl localhost:{{ nginx_default_port }}/index.html
+  changed_when: false
+  register: curl_result
+
+- name: Fail if verify-nginx page does not appear
+  fail: msg="nginx not installed properly"
+  when: "'verify-nginx page' not in curl_result.stdout"
+
+- name: Unlink the sites-enabled for verify-nginx
+  file:
+    path: /etc/nginx/sites-enabled/verify-nginx.conf
+    state: absent
+  changed_when: false
+  notify: restart nginx handler

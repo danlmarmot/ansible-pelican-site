@@ -1,0 +1,13 @@
+---
+- name: Create virtualenv for Pelican
+  shell: "sudo su {{ pelican_user }} -c 'pyvenv  {{ pelican_venv_dir }}'"
+  changed_when: false
+
+- name: Copy requirements into the virtualenv
+  copy:
+    src: pelican-requirements.txt
+    dest: "{{ pelican_venv_dir }}/requirements.txt"
+
+- name: Install Pelican dependencies
+  shell: "sudo su {{ pelican_user }} -c '{{ pelican_venv_dir }}/bin/pip install -r {{ pelican_venv_dir }}/requirements.txt'"
+  changed_when: false

@@ -1,0 +1,103 @@
+---
+# Look for the shared_folder variable for Vagrant-based installs
+- name: Look for Vagrant shared folder
+  stat: path=/home/vagrant/shared/installers/
+  register: shared_folder
+
+# Ensure installer is local on Vagrant installs
+- name: Check for Dropbox installer (Vagrant only)
+  stat: path=/home/vagrant/shared/installers/dropbox.tar.gz
+  register: dropbox_installer_filepath
+
+- name: Get Dropbox installer if not present (Vagrant only)
+  get_url:
+    url: "{{ dropbox_installer_url_base }}lnx.{{ansible_architecture}}"
+    dest: "/home/vagrant/shared/installers/dropbox.tar.gz"
+  when: dropbox_installer_filepath.stat.exists == false and group_name == "vagrant"
+
+- name: Copy Dropbox installer to /tmp (Vagrant only)
+  command: cp /home/vagrant/shared/installers/dropbox.tar.gz /tmp/dropbox.tar.gz
+  when: group_name == "vagrant"
+
+- name: Get Dropbox (non-Vagrant)
+  get_url:
+    url: "https://www.dropbox.com/download?plat=lnx.{{ansible_architecture}}"
+    dest: /tmp/dropbox.tar.gz
+  when: group_name != "vagrant"
+
+# Actual dropbox installation
+- name: Add Dropbox control script
+  get_url:
+    url: https://www.dropbox.com/download?dl=packages/dropbox.py
+    dest: /usr/local/bin/dropbox.py
+    mode: 0755
+
+- name: Ensure dropbox installation dir exists
+  file:
+    path: "{{ dropbox_install_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Extract Dropbox
+  command: tar -xvzf /tmp/dropbox.tar.gz -C /home/{{ site_admin_user }}
+
+- name: Stop dropbox via supervisor (jsut to be sure)
+  command: supervisorctl stop dropboxd
+
+- name: Link dropboxd into /usr/local/bin
+  file:
+    src: "{{ dropbox_install_dir }}/dropboxd"
+    dest: /usr/local/bin/dropboxd
+    state: link
+
+- name: Link dropbox CLI into /usr/local/bin
+  file:
+    src: /usr/local/bin/dropbox.py
+    dest: /usr/local/bin/dropbox
+    state: link
+
+- name: Look for Dropbox folder
+  stat: path=/home/"{{ site_admin_user }}"/Dropbox
+  register: dropbox_folder
+
+- name: Abort if Dropbox folder doesn't exist
+  fail: msg="Dropbox folder not present.  SSH to the machine, CHANGE TO THE {{ site_admin_user }} ACCOUNT, run 'dropboxd' and
+   follow the instructions to link this machine to a Dropbox account.
+   When finished, run the command 'vagrant provision'"
+  when: dropbox_folder.stat.exists == false
+
+- name: Copy supervisor conf file for dropbox
+  template:
+    src: dropboxd-supervisor.conf.j2
+    dest: /etc/supervisor/conf.d/dropboxd-supervisor.conf
+    owner: root
+    group: root
+    mode: 644
+  when: dropbox_under_supervisord
+
+- name: Make sure supervisord is started
+  service: name=supervisord state=started
+
+- name: Reread supervisord
+  command: supervisorctl reread
+  when: dropbox_under_supervisord
+
+- name: Update supervisord
+  command: supervisorctl update
+  when: dropbox_under_supervisord
+
+- name: Restart dropbox via supervisor
+  command: supervisorctl restart dropboxd
+  when: dropbox_under_supervisord
+
+- name: Verify dropbox is running in supervisor
+  command: sup status dropboxd
+  register: result
+  until:
+    - "'RUNNING' in result.stdout"
+  delay: 2
+  retries: 2
+
+- name: Set Dropbox to lansync
+  command: 'su {{ site_admin_user }} -c "dropbox lansync y"'
+  when: group_name == "vagrant"

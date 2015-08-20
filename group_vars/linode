@@ -1,0 +1,12 @@
+---
+# The name of this group for Ansible to manage
+group_name: linode
+
+#----------------------------------------------------------------------------
+# Linode specific settings
+#----------------------------------------------------------------------------
+ansible_ssh_user: pelicansiteuser
+ansible_ssh_private_key_file: ~/.ssh/id_dsa
+
+pelicansite_ssh_user: pelicansiteuser
+sshd_port: 44695

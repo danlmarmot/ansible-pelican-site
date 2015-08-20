@@ -1,0 +1,4 @@
+dropbox_installer_url_base: https://www.dropbox.com/download?plat=
+dropbox_install_dir: /home/{{ site_admin_user }}/.dropbox-dist
+
+dropbox_under_supervisord: true

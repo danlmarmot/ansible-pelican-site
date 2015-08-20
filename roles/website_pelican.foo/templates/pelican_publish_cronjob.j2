@@ -1,0 +1,2 @@
+#MAILTO={{ site_admin_email }}
+{{ pelican_publish_cron_minute }} {{ pelican_publish_cron_hour }} * * * {{ pelican_user }} bash /home/{{ pelican_user }}/pelican_publish_cron.sh 1>/dev/null 2>/tmp/pelican_publish_cron_err.txt

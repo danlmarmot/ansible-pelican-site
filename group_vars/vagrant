@@ -1,0 +1,11 @@
+---
+# The name of this group for Ansible to manage
+group_name: vagrant
+
+#----------------------------------------------------------------------------
+# Vagrant specific settings
+#----------------------------------------------------------------------------
+ansible_ssh_user: vagrant
+ansible_ssh_private_key_file: ~/.vagrant.d/insecure_private_key
+
+sshd_port: 22

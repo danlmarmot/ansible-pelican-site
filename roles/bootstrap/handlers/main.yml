@@ -1,0 +1,28 @@
+---
+# handlers file for bootstrap
+
+- name: restart sshd (handler)
+  service:
+    name: ssh
+    state: restarted
+
+- name: Register new Postfix alias (handler)
+  command: newaliases
+  notify: Restart Postfix (handler)
+
+- name: Restart Postfix (handler)
+  service:
+    name: postfix
+    state: restarted
+  notify: Ensure Postfix has restarted (handler)
+  changed_when: false
+
+- name: Ensure Postfix has restarted (handler)
+  wait_for:
+    port: 25
+    timeout: 20
+  notify: Verify Postfix (handler)
+
+- name: Verify Postfix (handler)
+  shell: "eval echo 'Just provisioned this new server' | mail -s 'Test Postfix, {{ lookup('pipe','date') }}' {{ site_admin_email }}"
+  changed_when: false

@@ -1,0 +1,28 @@
+---
+# For Vagrant, just use this command:
+#
+#   vagrant up
+#   vagrant provision
+#
+# For Linode use this command:
+# ansible-playbook pelicansite.yml --vault-password-file vault/plain/pass.txt --extra-vars "@group_vars/linode"
+
+# Bring up the pelicansite and be happy
+- name: "pelicansite"
+  hosts: "{{ group_name }}"
+  user: "{{ pelicansite_ssh_user }}"
+  sudo: yes
+  gather_facts: true
+
+  vars_files:
+    - "group_vars/{{ group_name }}"
+    - "vault/encrypted.yml"
+
+  roles:
+#    - dumpall
+#    - bootstrap
+#    - supervisord
+#    - dropbox
+#    - python3_pelican
+#    - nginx
+    - website_pelican.foo

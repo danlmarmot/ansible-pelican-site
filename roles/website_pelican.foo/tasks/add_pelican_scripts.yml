@@ -1,0 +1,17 @@
+---
+- name: Create publish cronjob script
+  template:
+    src: pelican_publish_cron.sh.j2
+    dest: "/home/{{ pelican_user }}/pelican_publish_cron.sh"
+    owner: "{{ pelican_user }}"
+    group: "{{ pelican_user }}"
+    mode: 0744
+
+- name: Add a cron.d file to run Pelican publish
+  template:
+    src: pelican_publish_cronjob.j2
+    dest: "/etc/cron.d/pelican_publish"
+    owner: root
+    group: root
+    mode: 0644
+  changed_when: false

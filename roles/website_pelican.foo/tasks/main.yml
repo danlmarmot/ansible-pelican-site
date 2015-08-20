@@ -1,0 +1,73 @@
+- include_vars: site.yml
+
+- name: Copy nginx.conf file
+  template:
+    src: nginx-site.conf.j2
+    dest: "/etc/nginx/sites-available/{{ site_dns_name }}.conf"
+#    owner: "{{ www_user }}"
+#    group: "{{ www_group }}"
+    owner: root
+    group: root
+
+- name: Link to nginx sites-enabled
+  file:
+    src: "/etc/nginx/sites-available/{{ site_dns_name }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ site_dns_name }}.conf"
+    state: link
+
+- name: Test for site html directory
+  stat: path="{{ site_root }}/html"
+  register: site_html_dir_stat
+
+- name: Ensure site's html directory exists (if it's not a symlink already)
+  file:
+      path: "{{ site_root }}/html"
+      state: directory
+      owner: "{{ www_user }}"
+      group: "{{ www_group }}"
+      mode: 0755
+  when: site_html_dir_stat.stat.islnk is not defined or site_html_dir_stat.stat.islnk==False
+
+- name: Ensure site's log directory exists
+  file:
+    path: "{{ site_root }}/logs"
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_group }}"
+    mode: 0755
+
+# For testing nginx, add site name to /etc/hosts for Vagrant
+- name: Add site name to /etc/hosts (Vagrant only)
+  lineinfile:
+    dest: /etc/hosts
+    line: 127.0.0.1 {{ site_dns_name }}
+  when: group_name == "vagrant"
+
+# This page will be returned if index.htm[l] is not present
+- name: Copy default.htm page
+  template:
+    src: default.htm.j2
+    dest: "{{ www_root_dir }}/{{ site_dns_name }}/html/default.htm"
+
+- name: Reload nginx config
+  command: nginx -s reload
+  changed_when: false
+
+- name: Verify default.htm page appears
+  command: curl {{ site_dns_name }}:{{ site_port }}/default.htm
+  register: default_htm_result
+  until:
+    - "'Default page for {{ site_dns_name }}' in default_htm_result.stdout"
+  delay: 1
+  retries: 3
+  changed_when: false
+
+# End of testing nginx, now add the site
+
+# Add pelican, if requested
+- include: add_pelican_content.yml
+  when: add_pelican_content
+
+# Add pelican scripts for scheduled publishing, etc
+- include: add_pelican_scripts.yml
+  when: add_pelican_scripts

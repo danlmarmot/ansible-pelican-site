@@ -1,0 +1,44 @@
+---
+- name: Set download filename
+  set_fact:
+    python3_installer_filename: "Python-{{ python3_version }}.tar.xz"
+
+- name: Set source directory for extracted source files
+  set_fact:
+    python3_source_dir: "/tmp/Python-{{ python3_version }}"
+
+- name: Get installer
+  get_url:
+    url: https://www.python.org/ftp/python/{{ python3_version }}/Python-{{ python3_version }}.tar.xz
+    dest: /tmp/{{ python3_installer_filename }}
+
+- name: Unarchive installer
+  unarchive:
+    src: /tmp/{{ python3_installer_filename }}
+    dest: /tmp
+    copy: no
+
+- name: Get build dependencies
+  shell: sudo apt-get -y build-dep python3.4
+  args:
+    chdir: "{{ python3_source_dir }}"
+
+- name: Configure
+  shell: ./configure
+  args:
+    chdir: "{{ python3_source_dir }}"
+
+- name: make
+  shell: make
+  args:
+    chdir: "{{ python3_source_dir }}"
+
+- name: make test
+  shell: make test
+  args:
+    chdir: "{{ python3_source_dir }}"
+
+- name: make install
+  shell: make install
+  args:
+    chdir: "{{ python3_source_dir }}"

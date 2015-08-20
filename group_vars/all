@@ -1,0 +1,26 @@
+---
+site_name: pelicansite.net
+site_admin_email: pelican_site_user@gmail.com
+
+# Site admin username and password
+# Generate the password on the target box with this--note that crypt is OS-specific, so you cannot do this on MacOS
+# python -c "import crypt; print crypt.crypt(raw_input('Enter password: '), '\$6\$' + raw_input('Enter salt: ') + '\$')"
+site_admin_user: pelicanuser
+site_admin_ssh_keypath: ~/.ssh/id_rsa.pub
+#deploy_password: see vault/encrypted.yml
+
+# Gmail username and password for automating outgoing mail from the server
+outgoing_gmail_username: pelican_site_user@gmail.com
+#outgoing_gmail_password: see vault/encrypted.yml
+
+# Pelican config settings
+# The user that issues commands to Pelican to generate content
+# Also the same user that schedules cronjobs
+
+install_pelican: true
+pelican_user: pelicanuser
+
+# Path to virtualenv to install Pelican into.
+# This should be outside the Dropbox folder to prevent needless sync updates
+pelican_venv_dir: /home/{{ pelican_user }}/venv/pelican
+

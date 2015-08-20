@@ -1,0 +1,17 @@
+# This file is for including in server blocks, and isn't a standalone conf file
+
+location = /favicon.ico {
+    log_not_found off;
+    access_log off;
+}
+
+location = /robots.txt {
+    allow all;
+    log_not_found off;
+    access_log off;
+}
+
+# Deny attempts to access hidden files such as .htaccess
+location ~ /\. {
+    deny all;
+}

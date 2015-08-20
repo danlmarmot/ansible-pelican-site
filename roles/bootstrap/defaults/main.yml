@@ -1,0 +1,5 @@
+---
+# defaults file for bootstrap
+sshd_port: 22
+enable_ufw: False
+
